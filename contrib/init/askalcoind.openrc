@@ -1,0 +1,93 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/askalcoin/.askalcoin" ]; then
+	ASKALCOIND_DEFAULT_DATADIR="/var/lib/askalcoin/.askalcoin"
+else
+	ASKALCOIND_DEFAULT_DATADIR="/var/lib/askalcoind"
+fi
+
+ASKALCOIND_CONFIGFILE=${ASKALCOIND_CONFIGFILE:-/etc/askalcoin/askalcoin.conf}
+ASKALCOIND_PIDDIR=${ASKALCOIND_PIDDIR:-/var/run/askalcoind}
+ASKALCOIND_PIDFILE=${ASKALCOIND_PIDFILE:-${ASKALCOIND_PIDDIR}/askalcoind.pid}
+ASKALCOIND_DATADIR=${ASKALCOIND_DATADIR:-${ASKALCOIND_DEFAULT_DATADIR}}
+ASKALCOIND_USER=${ASKALCOIND_USER:-${ASKALCOIN_USER:-askalcoin}}
+ASKALCOIND_GROUP=${ASKALCOIND_GROUP:-askalcoin}
+ASKALCOIND_BIN=${ASKALCOIND_BIN:-/usr/bin/askalcoind}
+ASKALCOIND_NICE=${ASKALCOIND_NICE:-${NICELEVEL:-0}}
+ASKALCOIND_OPTS="${ASKALCOIND_OPTS:-${ASKALCOIN_OPTS}}"
+
+name="Askalcoin Core Daemon"
+description="Askalcoin cryptocurrency P2P network daemon"
+
+command="/usr/bin/askalcoind"
+command_args="-pid=\"${ASKALCOIND_PIDFILE}\" \
+		-conf=\"${ASKALCOIND_CONFIGFILE}\" \
+		-datadir=\"${ASKALCOIND_DATADIR}\" \
+		-daemon \
+		${ASKALCOIND_OPTS}"
+
+required_files="${ASKALCOIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${ASKALCOIND_USER} \
+			-N ${ASKALCOIND_NICE} -w 2000"
+pidfile="${ASKALCOIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${ASKALCOIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${ASKALCOIND_USER}:${ASKALCOIND_GROUP}" \
+	"${ASKALCOIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${ASKALCOIND_USER}:${ASKALCOIND_GROUP}" \
+	"${ASKALCOIND_PIDDIR}"
+
+	checkpath -f \
+	-o "${ASKALCOIND_USER}:${ASKALCOIND_GROUP}" \
+	-m 0660 \
+	"${ASKALCOIND_CONFIGFILE}"
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if grep -qs '^rpcuser=' "${ASKALCOIND_CONFIGFILE}" && \
+		! grep -qs '^rpcpassword=' "${ASKALCOIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run askalcoind."
+		eerror "The setting must appear in ${ASKALCOIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Askalcoin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

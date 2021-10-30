@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+#  askalcoind The askalcoin core server.
+#
+#
+# chkconfig: 345 80 20
+# description: askalcoind
+# processname: askalcoind
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/askalcoind, see below
+if [ -f /etc/sysconfig/askalcoind ]; then
+        . /etc/sysconfig/askalcoind
+fi
+
+RETVAL=0
+
+prog=askalcoind
+# you can override the lockfile via ASKALCOIND_LOCKFILE in /etc/sysconfig/askalcoind
+lockfile=${ASKALCOIND_LOCKFILE-/var/lock/subsys/askalcoind}
+
+# askalcoind defaults to /usr/bin/askalcoind, override with ASKALCOIND_BIN
+askalcoind=${ASKALCOIND_BIN-/usr/bin/askalcoind}
+
+# askalcoind opts default to -disablewallet, override with ASKALCOIND_OPTS
+askalcoind_opts=${ASKALCOIND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $askalcoind $askalcoind_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -t600
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

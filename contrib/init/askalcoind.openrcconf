@@ -1,0 +1,33 @@
+# /etc/conf.d/askalcoind: config file for /etc/init.d/askalcoind
+
+# Config file location
+#ASKALCOIND_CONFIGFILE="/etc/askalcoin/askalcoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $ASKALCOIND_USER)
+#ASKALCOIND_PIDDIR="/var/run/askalcoind"
+
+# What filename to give the pidfile
+#ASKALCOIND_PIDFILE="${ASKALCOIND_PIDDIR}/askalcoind.pid"
+
+# Where to write askalcoind data (be mindful that the blockchain is large)
+#ASKALCOIND_DATADIR="/var/lib/askalcoind"
+
+# User and group to own askalcoind process
+#ASKALCOIND_USER="askalcoin"
+#ASKALCOIND_GROUP="askalcoin"
+
+# Path to askalcoind executable
+#ASKALCOIND_BIN="/usr/bin/askalcoind"
+
+# Nice value to run askalcoind under
+#ASKALCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#ASKALCOIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for askalcoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+ASKALCOIND_SIGTERM_TIMEOUT=600
